@@ -68,6 +68,28 @@ test("physical matching and exact modifiers", () => {
     false,
   );
 });
+
+test("numpad navigation requires the navigation layer, not just the position", () => {
+  const mappings = {Home: "Numpad7", End: "Numpad1", PageUp: "Numpad9", PageDown: "Numpad3", ArrowUp: "Numpad8", ArrowDown: "Numpad2", ArrowLeft: "Numpad4", ArrowRight: "Numpad6", Delete: "NumpadDecimal"};
+  for (const [display, code] of Object.entries(mappings)) {
+    assert.ok(matchesTarget(event(code, false, {key: display}), target(display)));
+    assert.equal(matchesTarget(event(code, false, {key: code === "NumpadDecimal" ? "." : code.at(-1)}), target(display)), false);
+    assert.equal(matchesTarget(event(code, false, {key: display, ctrlKey: true}), target(display)), false);
+  }
+});
+
+test("numpad digits, operators and Enter have their own modifier requirements", () => {
+  for (const digit of "0123456789") {
+    assert.ok(matchesTarget(event(`Numpad${digit}`, false, {key: digit}), target(digit)));
+    assert.equal(matchesTarget(event(`Numpad${digit}`, false, {key: "Home"}), target(digit)), false);
+  }
+  for (const [display, code] of [["+", "NumpadAdd"], ["-", "NumpadSubtract"], ["*", "NumpadMultiply"], ["/", "NumpadDivide"], [".", "NumpadDecimal"], ["Enter", "NumpadEnter"]]) {
+    assert.ok(matchesTarget(event(code, false, {key: display}), target(display)));
+    assert.equal(matchesTarget(event(code, true, {key: display}), target(display)), false);
+  }
+  assert.equal(matchesTarget(event("NumpadDecimal", false, {key: "Delete"}), target(".")), false);
+  assert.equal(matchesTarget(event("Numpad7", false, {key: "7"}), thaiKeys.find(k => k.display === "ก")), false);
+});
 test("Thai ignores generated character and requires correct Shift layer", () => {
   const ko = thaiKeys.find((k) => k.display === "ก"),
     tho = thaiKeys.find((k) => k.display === "ฐ");

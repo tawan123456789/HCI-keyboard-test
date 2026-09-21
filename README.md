@@ -72,6 +72,16 @@ The Thai experiment pool includes only Thai Unicode characters. ASCII symbols in
 
 ## Measurement
 
+Numpad alternatives are defined in `src/keyboard/numpad.js`. Numbers accept
+numpad digits when the key event reports a digit (normally Num Lock on).
+Home/End/PageUp/PageDown, arrows and Delete accept their numpad positions
+when the event reports the corresponding navigation key (normally Num Lock
+off). Numpad Enter and `+ - * / . =` are also supported. Numpad operators
+do not require Shift; the original main-keyboard Shift rules still apply.
+Extra modifiers are rejected. Only numpad alternatives inspect `event.key`
+to distinguish the effective layer; Thai matching stays physical-code based.
+Per-trial JSON includes alternative bindings and the actual response timeline.
+
 After synchronously updating the target DOM, a requestAnimationFrame callback records `performance.now()`. Input before that callback is ignored. Each correct response subtracts the same start timestamp; wrong attempts do not reset it. Browser rendering and device latency still limit precision: this is not hardware-calibrated stimulus timing.
 
 Wrong keydowns retain code, generated key, all four modifier states, monotonic timestamp and time from target. Required Shift preludes are retained in the timeline. The next target is rendered immediately without a success delay.

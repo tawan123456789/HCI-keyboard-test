@@ -1,4 +1,5 @@
 import { thaiKeys } from "./thaiKedmanee.js";
+import { withNumpadAlternatives } from "./numpad.js";
 export const categories = {
   thai: "Thai",
   english: "English",
@@ -77,7 +78,7 @@ export const allKeys = [
   ...numberKeys,
   ...symbolKeys,
   ...specialKeys,
-];
+].map(withNumpadAlternatives);
 export function getPool(enabled, uppercase = false) {
   return allKeys
     .filter((k) => enabled.includes(k.category))

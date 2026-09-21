@@ -11,8 +11,14 @@ const requirements = {
   metaKey: "metaRequired",
 };
 export function matchesTarget(event, target) {
+  return [target, ...(target.alternativeBindings ?? [])].some((binding) =>
+    matchesBinding(event, binding),
+  );
+}
+function matchesBinding(event, target) {
   if (!(target.acceptableCodes ?? [target.code]).includes(event.code))
     return false;
+  if (target.key !== undefined && event.key !== target.key) return false;
   return Object.entries(modifiers).every(
     ([flag, codes]) =>
       Boolean(event[flag]) ===

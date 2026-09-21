@@ -97,6 +97,7 @@ export class Session {
       displayedTarget: this.target.display,
       category: this.target.category,
       expectedCode: this.target.acceptableCodes ?? this.target.code,
+      alternativeBindings: this.target.alternativeBindings ?? [],
       shiftRequired: !!this.target.shiftRequired,
       reactionTimeMs: now - this.shownAt,
       errorCount: this.incorrect.length,
