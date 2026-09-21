@@ -40,8 +40,10 @@ to allow that load balancer on the selected port.
 For public use, configure your cloud HTTPS load balancer or TLS reverse proxy
 to forward to HTTP port 8080 (or the configured host port), with `/healthz`
 as its health-check path. Point your domain to that endpoint and attach a TLS
-certificate. HTTPS is required for the app's `crypto.randomUUID()` outside
-localhost. This Compose file serves HTTP and does not provision DNS or TLS.
+certificate. HTTPS is recommended for public deployment. Session IDs use
+`crypto.randomUUID()` when available, with a UUID v4 fallback using
+`crypto.getRandomValues()` on HTTP origins. This Compose file serves HTTP
+and does not provision DNS or TLS.
 
 The image builds with Node and serves only `dist/` using Nginx as a non-root
 user. Compose adds a read-only filesystem, temporary writable storage, a

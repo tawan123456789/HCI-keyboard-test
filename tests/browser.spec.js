@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { getPool } from "../src/keyboard/definitions.js";
+
+test("session completes when randomUUID is unavailable on HTTP", async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(crypto, "randomUUID", {value: undefined}));
+  await configure(page, 1, ["english"]);
+  const display = await page.locator("#target").textContent();
+  await page.waitForTimeout(35);
+  await answer(page, getPool(["english"]).find(key => key.display === display));
+  await expect(page.getByRole("heading", {name: "Your results"})).toBeVisible();
+  await expect(page.locator(".session-id")).toContainText(/Session [0-9a-f-]{36}/);
+});
 async function configure(page, count, enabled) {
   await page.goto("/");
   await page.locator("#trials").fill(String(count));

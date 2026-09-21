@@ -1,4 +1,5 @@
 import { matchesTarget, isModifierPrelude } from "./keyboard/matcher.js";
+import { createSessionId } from "./sessionId.js";
 const shuffle = (items, rng) => {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {
@@ -46,7 +47,7 @@ export class Session {
     this.incorrect = [];
     this.invalidatedAttempts = [];
     this.pauses = [];
-    this.id = crypto.randomUUID();
+    this.id = createSessionId();
   }
   get target() {
     return this.sequence[this.index];

@@ -4,6 +4,15 @@ import { allKeys, getPool } from "../src/keyboard/definitions.js";
 import { thaiKeys } from "../src/keyboard/thaiKedmanee.js";
 import { matchesTarget, isModifierPrelude } from "../src/keyboard/matcher.js";
 import { Session, generateSequence } from "../src/session.js";
+import { createSessionId } from "../src/sessionId.js";
+
+test("session IDs support native UUID and HTTP crypto without randomUUID", () => {
+  assert.equal(createSessionId({ randomUUID: () => "native-id" }), "native-id");
+  const cryptoApi = { getRandomValues: bytes => crypto.getRandomValues(bytes) };
+  const ids = Array.from({length: 100}, () => createSessionId(cryptoApi));
+  assert.equal(new Set(ids).size, ids.length);
+  for (const id of ids) assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+});
 import {
   average,
   median,
