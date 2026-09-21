@@ -1,0 +1,22 @@
+{
+  "name": "keyboard-reaction-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "globals": "^16.0.0",
+    "@playwright/test": "^1.55.0"
+  },
+  "dependencies": {
+    "lucide": "^0.468.0"
+  }
+}
