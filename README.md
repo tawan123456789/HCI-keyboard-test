@@ -85,9 +85,9 @@ requested assistance controls supersede the original no-hints requirement.
 
 Numpad alternatives are defined in `src/keyboard/numpad.js`. Numbers accept
 numpad digits when the key event reports a digit (normally Num Lock on).
-Home/End/PageUp/PageDown, arrows and Delete accept their numpad positions
-when the event reports the corresponding navigation key (normally Num Lock
-off). Numpad Enter and `+ - * / . =` are also supported. Numpad operators
+Home/End/PageUp/PageDown accept physical Numpad7/Numpad1/Numpad9/Numpad3
+regardless of Num Lock. Arrows and Delete still require the navigation layer
+(normally Num Lock off). Numpad Enter and `+ - * / . =` are also supported. Numpad operators
 do not require Shift; the original main-keyboard Shift rules still apply.
 Extra modifiers are rejected. Only numpad alternatives inspect `event.key`
 to distinguish the effective layer; Thai matching stays physical-code based.

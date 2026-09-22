@@ -105,11 +105,12 @@ test("physical matching and exact modifiers", () => {
   );
 });
 
-test("numpad navigation requires the navigation layer, not just the position", () => {
+test("Home End PageUp PageDown accept either Num Lock layer; other navigation keeps layer checks", () => {
   const mappings = {Home: "Numpad7", End: "Numpad1", PageUp: "Numpad9", PageDown: "Numpad3", ArrowUp: "Numpad8", ArrowDown: "Numpad2", ArrowLeft: "Numpad4", ArrowRight: "Numpad6", Delete: "NumpadDecimal"};
   for (const [display, code] of Object.entries(mappings)) {
     assert.ok(matchesTarget(event(code, false, {key: display}), target(display)));
-    assert.equal(matchesTarget(event(code, false, {key: code === "NumpadDecimal" ? "." : code.at(-1)}), target(display)), false);
+    assert.equal(matchesTarget(event(code, false, {key: code === "NumpadDecimal" ? "." : code.at(-1)}), target(display)), ["Home", "End", "PageUp", "PageDown"].includes(display));
+    assert.equal(matchesTarget(event("Numpad0", false, {key: display}), target(display)), false);
     assert.equal(matchesTarget(event(code, false, {key: display, ctrlKey: true}), target(display)), false);
   }
 });

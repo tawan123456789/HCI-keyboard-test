@@ -26,10 +26,11 @@ export function withNumpadAlternatives(target) {
     code = navigation[target.code];
     if (target.code === "Enter") code = "NumpadEnter";
   }
-  // The generated key disambiguates the effective Num Lock layer. This also
-  // handles keyboards/OSes where Shift temporarily reverses Num Lock.
+  // These navigation targets accept the physical numpad position on either
+  // Num Lock layer. Other alternatives still validate their generated key.
+  const physicalNavigation = ["Home", "End", "PageUp", "PageDown"].includes(target.code);
   return code ? {
     ...target,
-    alternativeBindings: [{ code, key: target.display, shiftRequired: false }],
+    alternativeBindings: [{ code, ...(physicalNavigation ? {} : {key: target.display}), shiftRequired: false }],
   } : target;
 }

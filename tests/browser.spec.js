@@ -67,7 +67,7 @@ test("numpad navigation and digits complete real UI trials; NumLock is not block
       await page.waitForTimeout(25);
       const notBlocked = await page.evaluate(() => window.dispatchEvent(new KeyboardEvent("keydown", {code: "NumLock", key: "NumLock", bubbles: true, cancelable: true})));
       expect(notBlocked).toBe(true);
-      await page.evaluate(({code, key}) => window.dispatchEvent(new KeyboardEvent("keydown", {code, key, location: 3, bubbles: true, cancelable: true})), binding);
+      await page.evaluate(({code, key}) => window.dispatchEvent(new KeyboardEvent("keydown", {code, key: key ?? code.at(-1), location: 3, bubbles: true, cancelable: true})), binding);
     }
     await expect(page.getByRole("heading", { name: "Your results" })).toBeVisible();
     await expect(page.locator("#trial-rows tr")).toHaveCount(pool.length);
