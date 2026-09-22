@@ -287,9 +287,11 @@ progress::-webkit-progress-value {
   background: #176b50;
 }
 .target {
+  font-family: "JetBrains Mono", "Noto Serif Thai", monospace;
+  font-variant-ligatures: none;
   font-size: 128px;
-  font-weight: 600;
-  line-height: 1.6;
+  font-weight: 500;
+  line-height: 1.8;
   min-height: 205px;
   display: flex;
   align-items: center;
@@ -430,7 +432,16 @@ td {
   overflow-wrap: anywhere;
 }
 .table-target {
+  font-family: "JetBrains Mono", "Noto Serif Thai", monospace;
+  font-weight: 500;
+  font-variant-ligatures: none;
   font-size: 16px;
+}
+.bar-row > span,
+#answer {
+  font-family: "JetBrains Mono", "Noto Serif Thai", monospace;
+  font-weight: 500;
+  font-variant-ligatures: none;
 }
 .table-scroll {
   overflow-x: auto;

@@ -50,6 +50,10 @@ test("every Thai target including mai taikhu completes with physical keys", asyn
   for (let i = 0; i < pool.length; i++) {
     const display = await page.locator("#target").textContent();
     seen.add(display);
+    if (display === "็") {
+      await page.evaluate(() => document.fonts.ready);
+      await page.screenshot({path: "artifacts/thai-target-font.png"});
+    }
     await page.waitForTimeout(25);
     await answer(page, pool.find(k => k.display === display));
   }

@@ -72,6 +72,11 @@ The Thai experiment pool includes only Thai Unicode characters. ASCII symbols in
 
 ## Measurement
 
+Target glyphs use bundled Noto Serif Thai (looped Thai) and JetBrains Mono
+(Latin letters, digits and punctuation), at weight 500 with ligatures off.
+Result key labels and revealed answers use the same fonts. These target
+fonts are served with the app and do not require a third-party font request.
+
 The active test has Show answer (eye) and Skip trial controls. Revealing an
 answer marks the trial assisted, including after pause/resume. Skipping
 records a result with null reaction time and retains elapsed time and errors.

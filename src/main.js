@@ -16,6 +16,8 @@ import { categories, getPool } from "./keyboard/definitions.js";
 import { Session, generateSequence } from "./session.js";
 import { answerLabel, summarizeMistakes } from "./keyboard/labels.js";
 import { calculateStats, exportSession, toCSV } from "./analytics.js";
+import "@fontsource/noto-serif-thai/thai-500.css";
+import "@fontsource/jetbrains-mono/latin-500.css";
 import "./style.css";
 
 const app = document.querySelector("#app");
