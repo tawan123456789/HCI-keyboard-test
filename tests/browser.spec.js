@@ -26,6 +26,23 @@ async function answer(page, key) {
   await page.keyboard.press(`${key.shiftRequired ? "Shift+" : ""}${physical}`);
 }
 
+test("reveal, skip and final expected-answer mistake report", async ({ page }) => {
+  await configure(page, 2, ["english"]);
+  await page.waitForTimeout(30);
+  await page.keyboard.press("F4"); await page.keyboard.press("F4");
+  await page.getByRole("button", {name: "Show answer", exact: true}).click();
+  await expect(page.locator("#answer")).not.toBeEmpty();
+  await page.getByRole("button", {name: "Skip trial", exact: true}).click();
+  await expect(page.locator("#answer")).toBeEmpty();
+  await page.waitForTimeout(30);
+  await page.getByRole("button", {name: "Skip trial", exact: true}).click();
+  await expect(page.getByRole("heading", {name: "Your results"})).toBeVisible();
+  await expect(page.locator("#trial-rows")).toContainText("F4 [F4] × 2");
+  await expect(page.locator("#trial-rows")).toContainText("Skipped");
+  await page.getByRole("button", {name: "Reaction time"}).click();
+  await page.screenshot({path: "artifacts/skipped-results.png", fullPage: true});
+});
+
 test("every Thai target including mai taikhu completes with physical keys", async ({ page }) => {
   const pool = getPool(["thai"]);
   await configure(page, pool.length, ["thai"]);

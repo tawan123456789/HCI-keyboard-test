@@ -9,9 +9,12 @@ import {
   Play,
   Check,
   Activity,
+  SkipForward,
+  Eye,
 } from "lucide";
 import { categories, getPool } from "./keyboard/definitions.js";
 import { Session, generateSequence } from "./session.js";
+import { answerLabel, summarizeMistakes } from "./keyboard/labels.js";
 import { calculateStats, exportSession, toCSV } from "./analytics.js";
 import "./style.css";
 
@@ -33,7 +36,7 @@ const esc = (value) =>
         c
       ],
   );
-const ms = (n) => `${Math.round(n).toLocaleString()} ms`;
+const ms = (n) => n === null ? "—" : `${Math.round(n).toLocaleString()} ms`;
 const icon = (name) => `<i data-lucide="${name}" aria-hidden="true"></i>`;
 function shell(content, state = "SETUP") {
   app.innerHTML = `<header><a href="/" class="brand">${icon("keyboard")}<span>Key <b>/</b> Lab</span></a><span class="header-label">KEYBOARD REACTION TEST</span><span class="state"><span></span>${state}</span></header><main>${content}</main><footer><span>KEY / LAB</span><span>Physical keyboard study <b>·</b> Kedmanee + QWERTY</span><span>Local session</span></footer>`;
@@ -48,6 +51,8 @@ function shell(content, state = "SETUP") {
       Play,
       Check,
       Activity,
+      SkipForward,
+      Eye,
     },
   });
 }
@@ -138,6 +143,20 @@ function running() {
     "RUNNING",
   );
   app.querySelector("#pause").onclick = pause;
+  app.querySelector(".trial-top").insertAdjacentHTML("beforeend", `<div class="actions"><button id="reveal" title="Show answer" aria-label="Show answer">${icon("eye")}</button><button id="skip" title="Skip trial" aria-label="Skip trial">${icon("skip-forward")}</button></div>`);
+  app.querySelector(".test-stage").insertAdjacentHTML("beforeend", '<p id="answer" aria-live="polite"></p>');
+  createIcons({icons: {Eye, SkipForward}});
+  const showAnswer = () => {
+    if (session.revealedAt !== null) app.querySelector("#answer").textContent = answerLabel(session.target);
+  };
+  showAnswer();
+  app.querySelector("#reveal").onclick = () => { session.reveal(); showAnswer(); };
+  app.querySelector("#skip").onclick = () => {
+    const outcome = session.skip();
+    if (outcome === "ignored") return;
+    cancelAnimationFrame(frame);
+    if (outcome === "completed") results(); else running();
+  };
   // DOM is updated synchronously. Arm timing at the next rendering opportunity.
   frame = requestAnimationFrame(() => session?.markShown());
 }
@@ -186,6 +205,9 @@ function results() {
       ["Slowest", ms(s.slowest)],
       ["Test duration", `${(session.durationMs / 1000).toFixed(1)} s`],
       ["Hesitation trials", s.hesitations.length],
+      ["Skipped", s.skipped],
+      ["Answer revealed", s.assisted],
+      ["Unassisted trials", s.validCount],
     ]
       .map(
         ([label, value]) =>
@@ -193,7 +215,7 @@ function results() {
       )
       .join(
         "",
-      )}</section><div class="analysis-grid"><section><h2>Reaction time by key</h2><div class="bars">${s.byKey.map((k) => `<div class="bar-row"><span>${esc(k.label)}</span><div><div style="width:${Math.max(1, (k.averageMs / s.slowest) * 100)}%"></div></div><strong>${ms(k.averageMs)}</strong></div>`).join("")}</div></section><section><h2>Performance by category</h2><table><thead><tr><th>Category</th><th>Average</th><th>Errors</th></tr></thead><tbody>${s.byCategory.map((c) => `<tr><td>${categories[c.id]}</td><td>${ms(c.averageMs)}</td><td>${c.errors}</td></tr>`).join("")}</tbody></table><h2 class="subheading">Most mistaken keys</h2>${
+      )}</section><div class="analysis-grid"><section><h2>Reaction time by key</h2><div class="bars">${s.byKey.map((k) => `<div class="bar-row"><span>${esc(k.label)}</span><div><div style="width:${k.averageMs === null ? 0 : Math.max(1, (k.averageMs / (s.slowest || 1)) * 100)}%"></div></div><strong>${ms(k.averageMs)}</strong></div>`).join("")}</div></section><section><h2>Performance by category</h2><table><thead><tr><th>Category</th><th>Average</th><th>Errors</th></tr></thead><tbody>${s.byCategory.map((c) => `<tr><td>${categories[c.id]}</td><td>${ms(c.averageMs)}</td><td>${c.errors}</td></tr>`).join("")}</tbody></table><h2 class="subheading">Most mistaken keys</h2>${
       mistakes.length
         ? `<ul class="mistakes">${mistakes
             .slice(0, 8)
@@ -222,18 +244,20 @@ function results() {
   const rows = () => {
     const ordered = [...session.results].sort(
       (a, b) =>
-        (typeof a[sortField] === "number"
-          ? a[sortField] - b[sortField]
+        (["trialIndex", "reactionTimeMs", "errorCount"].includes(sortField)
+          ? (a[sortField] ?? Infinity) - (b[sortField] ?? Infinity)
           : a[sortField].localeCompare(b[sortField])) * (ascending ? 1 : -1),
     );
     app.querySelector("#trial-rows").innerHTML = ordered
       .map(
         (r) =>
-          `<tr><td>${r.trialIndex}</td><td class="table-target">${esc(r.displayedTarget)}</td><td>${categories[r.category]}</td><td>${ms(r.reactionTimeMs)}</td><td>${r.errorCount}</td><td>${r.incorrectAttempts.map((a) => esc(`${a.shiftKey ? "Shift+" : ""}${a.code}`)).join(", ") || "—"}</td><td><span class="status ${r.reactionTimeMs > s.threshold ? "hesitant" : ""}">${r.reactionTimeMs > s.threshold ? "Hesitation" : "Normal"}${r.resumed ? " · Resumed" : ""}</span></td></tr>`,
+          `<tr><td>${r.trialIndex}</td><td class="table-target">${esc(r.displayedTarget)}<div class="muted">${esc(r.expectedAnswer)}</div></td><td>${categories[r.category]}</td><td>${ms(r.reactionTimeMs)}</td><td>${r.errorCount}</td><td>${summarizeMistakes(r.incorrectAttempts).map(a => `${esc(a.pressed)} × ${a.count}`).join("<br>") || "—"}</td><td><span class="status">${r.skipped ? "Skipped" : r.assisted ? "Assisted" : r.reactionTimeMs > s.threshold ? "Hesitation" : "Normal"}${r.skipped && r.assisted ? " · Answer revealed" : ""}${r.resumed ? " · Resumed" : ""}</span></td></tr>`,
       )
       .join("");
   };
   rows();
+  app.querySelector("#trials-table th:nth-child(2) button").textContent = "Target / Expected answer";
+  app.querySelector(".result-section:last-of-type > .muted").textContent = "Timing and accuracy exclude skipped and assisted trials. Errors include all valid attempts, including skipped and assisted trials. Interrupted attempts remain in JSON. Duration includes pauses.";
   app.querySelectorAll("[data-sort]").forEach(
     (b) =>
       (b.onclick = () => {

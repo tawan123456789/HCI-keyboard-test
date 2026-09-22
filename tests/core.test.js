@@ -22,6 +22,42 @@ import {
 } from "../src/analytics.js";
 const target = (display) =>
   allKeys.find((k) => k.display === display && k.category !== "thai");
+
+test("skip and reveal retain mistakes, answers and exclude assisted timing", () => {
+  let now = 0;
+  const s = new Session([target("+"), target("F5"), target("7")], {categories: ["symbol", "function", "number"]}, () => now);
+  assert.equal(s.skip(), "ignored");
+  s.start(); s.markShown();
+  now = 100; s.input(event("Equal")); s.input(event("Equal"));
+  s.reveal();
+  now = 200; s.reveal();
+  assert.equal(s.revealedAt, 100);
+  s.pause(); s.resume(); s.markShown();
+  now = 250; s.input(event("Equal", true));
+  assert.equal(s.results[0].assisted, true);
+  assert.equal(s.results[0].invalidatedAttempts[0].incorrectAttempts.length, 2);
+  assert.match(s.results[0].expectedAnswer, /Shift \+ Equal/);
+  s.markShown(); s.input(event("F4")); s.input(event("F4")); now = 500; s.skip();
+  assert.equal(s.results[1].reactionTimeMs, null);
+  assert.equal(s.results[1].incorrectSummary[0].count, 2);
+  assert.equal(s.results[1].skipped, true);
+  s.markShown(); now = 800; s.input(event("Digit7"));
+  const stats = calculateStats(s.results);
+  assert.equal(stats.average, 300);
+  assert.equal(stats.skipped, 1);
+  assert.equal(stats.assisted, 1);
+  assert.equal(stats.validCount, 1);
+  assert.ok(toCSV(s).includes("expected_answer"));
+  assert.equal(exportSession(s).schemaVersion, 2);
+});
+
+test("all-skipped session completes without fabricated reaction statistics", () => {
+  const s = new Session([target("F5")], {categories: ["function"]});
+  s.start(); s.markShown();
+  assert.equal(s.skip(), "completed");
+  assert.equal(calculateStats(s.results).average, null);
+  assert.equal(calculateStats(s.results).hesitations.length, 0);
+});
 const event = (code, shiftKey = false, extra = {}) => ({
   code,
   key: code,

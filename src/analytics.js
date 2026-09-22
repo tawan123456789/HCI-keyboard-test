@@ -1,3 +1,4 @@
+import { summarizeMistakes } from "./keyboard/labels.js";
 export const average = (a) =>
   a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
 export function median(a) {
@@ -6,7 +7,8 @@ export function median(a) {
   return b.length ? (b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2) : 0;
 }
 export function calculateStats(results) {
-  const times = results.map((r) => r.reactionTimeMs),
+  const valid = results.filter(r => !r.skipped && !r.assisted);
+  const times = valid.map((r) => r.reactionTimeMs),
     mean = average(times),
     mid = median(times);
   // Population SD across completed valid trials; strict greater-than threshold.
@@ -21,36 +23,39 @@ export function calculateStats(results) {
         id,
         label: field === "targetId" ? rows[0].displayedTarget : id,
         count: rows.length,
-        averageMs: average(rows.map((r) => r.reactionTimeMs)),
+        averageMs: rows.some(r => !r.skipped && !r.assisted) ? average(rows.filter(r => !r.skipped && !r.assisted).map((r) => r.reactionTimeMs)) : null,
         errors: rows.reduce((s, r) => s + r.errorCount, 0),
       }),
     );
   return {
-    average: mean,
-    median: mid,
-    fastest: times.length ? Math.min(...times) : 0,
-    slowest: times.length ? Math.max(...times) : 0,
+    average: times.length ? mean : null,
+    median: times.length ? mid : null,
+    fastest: times.length ? Math.min(...times) : null,
+    slowest: times.length ? Math.max(...times) : null,
     errors,
-    accuracy: results.length
-      ? (results.length / (results.length + errors)) * 100
+    skipped: results.filter(r => r.skipped).length,
+    assisted: results.filter(r => r.assisted).length,
+    validCount: valid.length,
+    accuracy: valid.length + valid.reduce((sum, r) => sum + r.errorCount, 0)
+      ? (valid.length / (valid.length + valid.reduce((sum, r) => sum + r.errorCount, 0))) * 100
       : 0,
     standardDeviation,
     threshold,
-    hesitations: results.filter((r) => r.reactionTimeMs > threshold),
+    hesitations: valid.filter((r) => r.reactionTimeMs > threshold),
     byKey: group("targetId").sort((a, b) => b.averageMs - a.averageMs),
     byCategory: group("category"),
   };
 }
 export function exportSession(session) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: session.id,
     startedAt: session.startedAt,
     endedAt: session.endedAt,
     settings: session.settings,
     sequence: session.sequence,
     durationMs: session.durationMs,
-    activeDurationMs: session.results.reduce((s, r) => s + r.reactionTimeMs, 0),
+    activeDurationMs: session.results.reduce((s, r) => s + (r.elapsedTimeMs ?? r.reactionTimeMs), 0),
     pauses: session.pauses,
     stats: calculateStats(session.results),
     trials: session.results,
@@ -82,6 +87,7 @@ export function toCSV(session) {
     "resumed",
     "session_duration_ms",
     "accuracy_percent",
+    "expected_answer", "incorrect_counts", "skipped", "assisted", "elapsed_time_ms",
   ];
   const rows = session.results.map((r) => [
     session.id,
@@ -93,15 +99,18 @@ export function toCSV(session) {
     r.category,
     [r.expectedCode].flat().join("|"),
     r.shiftRequired,
-    r.reactionTimeMs,
+    r.reactionTimeMs ?? "",
     r.errorCount,
     r.incorrectAttempts
       .map((a) => `${a.shiftKey ? "Shift+" : ""}${a.code}`)
       .join("|"),
-    r.reactionTimeMs > data.stats.threshold,
+    !r.skipped && !r.assisted && r.reactionTimeMs > data.stats.threshold,
     r.resumed,
     data.durationMs,
     data.stats.accuracy,
+    r.expectedAnswer,
+    JSON.stringify(summarizeMistakes(r.incorrectAttempts)),
+    !!r.skipped, !!r.assisted, r.elapsedTimeMs ?? r.reactionTimeMs,
   ]);
   return (
     "\uFEFF" +

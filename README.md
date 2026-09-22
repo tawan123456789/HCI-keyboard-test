@@ -72,6 +72,17 @@ The Thai experiment pool includes only Thai Unicode characters. ASCII symbols in
 
 ## Measurement
 
+The active test has Show answer (eye) and Skip trial controls. Revealing an
+answer marks the trial assisted, including after pause/resume. Skipping
+records a result with null reaction time and retains elapsed time and errors.
+Timing, hesitation and accuracy use only unassisted, non-skipped trials.
+Error totals still include all non-invalidated attempts. If no unassisted
+trials exist, reaction statistics are unavailable. Results show the expected
+physical combination (including numpad alternatives) and wrong combinations,
+generated characters and counts. CSV includes these summaries; JSON schema 2
+also preserves reveal/skip events and full attempt details. These explicitly
+requested assistance controls supersede the original no-hints requirement.
+
 Numpad alternatives are defined in `src/keyboard/numpad.js`. Numbers accept
 numpad digits when the key event reports a digit (normally Num Lock on).
 Home/End/PageUp/PageDown, arrows and Delete accept their numpad positions

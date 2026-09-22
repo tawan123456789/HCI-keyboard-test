@@ -1,5 +1,6 @@
 import { matchesTarget, isModifierPrelude } from "./keyboard/matcher.js";
 import { createSessionId } from "./sessionId.js";
+import { answerLabel, summarizeMistakes } from "./keyboard/labels.js";
 const shuffle = (items, rng) => {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {
@@ -47,6 +48,7 @@ export class Session {
     this.incorrect = [];
     this.invalidatedAttempts = [];
     this.pauses = [];
+    this.revealedAt = null;
     this.id = createSessionId();
   }
   get target() {
@@ -94,6 +96,22 @@ export class Session {
       this.incorrect.push(attempt);
       return outcome;
     }
+    return this.finish(now, false);
+  }
+  reveal() {
+    if (this.state !== "RUNNING" || this.shownAt === null) return;
+    if (this.revealedAt === null) {
+      this.revealedAt = this.clock();
+      this.events.push({outcome: "revealed", timestamp: this.revealedAt, timeFromTargetMs: this.revealedAt - this.shownAt});
+    }
+  }
+  skip() {
+    if (this.state !== "RUNNING" || this.shownAt === null) return "ignored";
+    const now = this.clock();
+    this.events.push({outcome: "skipped", timestamp: now, timeFromTargetMs: now - this.shownAt});
+    return this.finish(now, true);
+  }
+  finish(now, skipped) {
     this.results.push({
       trialIndex: this.index + 1,
       targetId: this.target.id,
@@ -102,7 +120,13 @@ export class Session {
       expectedCode: this.target.acceptableCodes ?? this.target.code,
       alternativeBindings: this.target.alternativeBindings ?? [],
       shiftRequired: !!this.target.shiftRequired,
-      reactionTimeMs: now - this.shownAt,
+      expectedAnswer: answerLabel(this.target),
+      incorrectSummary: summarizeMistakes(this.incorrect),
+      skipped,
+      assisted: this.revealedAt !== null,
+      revealedAt: this.revealedAt,
+      reactionTimeMs: skipped ? null : now - this.shownAt,
+      elapsedTimeMs: now - this.shownAt,
       errorCount: this.incorrect.length,
       incorrectAttempts: this.incorrect,
       timeline: this.events,
@@ -116,6 +140,7 @@ export class Session {
     this.events = [];
     this.incorrect = [];
     this.invalidatedAttempts = [];
+    this.revealedAt = null;
     if (this.index === this.sequence.length) {
       this.state = "COMPLETED";
       this.endedAt = new Date().toISOString();
