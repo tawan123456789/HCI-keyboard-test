@@ -113,6 +113,27 @@ test("modifier targets and preludes", () => {
   assert.ok(isModifierPrelude(event("ShiftLeft", true), target("+")));
   assert.equal(isModifierPrelude(event("ShiftLeft", true), target("=")), false);
 });
+
+test("mai taikhu accepts Shift H regardless of OS language and logs numpad state", () => {
+  const mark = thaiKeys.find(k => k.display === "็");
+  assert.equal(mark.code, "KeyH");
+  assert.equal(mark.shiftRequired, true);
+  for (const key of ["H", "็", "Process"]) {
+    const s = new Session([mark], {});
+    s.start(); s.markShown();
+    assert.equal(s.input(event("ShiftLeft", true)), "prelude");
+    assert.equal(s.input(event("KeyH", true, {key})), "completed");
+    assert.equal(s.results[0].errorCount, 0);
+  }
+  const s = new Session([target("Home")], {});
+  assert.equal(s.input(event("NumLock")), "ignored");
+  assert.equal(s.state, "READY");
+  s.start(); s.markShown();
+  assert.equal(s.input(event("NumLock")), "ignored");
+  assert.equal(s.input(event("Numpad7", false, {key: "Home", location: 3, getModifierState: () => false})), "completed");
+  assert.equal(s.results[0].errorCount, 0);
+  assert.equal(s.results[0].timeline[0].location, 3);
+});
 test("session excludes start, repeats, and pre-render input; errors retain timer", () => {
   let now = 0;
   const s = new Session(

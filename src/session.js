@@ -64,6 +64,7 @@ export class Session {
   }
   input(event) {
     if (event.repeat) return "ignored";
+    if (event.code === "NumLock" || event.key === "NumLock") return "ignored";
     if (this.state === "READY") {
       this.start();
       return "started";
@@ -77,6 +78,8 @@ export class Session {
       ctrlKey: !!event.ctrlKey,
       altKey: !!event.altKey,
       metaKey: !!event.metaKey,
+      location: event.location ?? 0,
+      numLock: event.getModifierState?.("NumLock") ?? null,
       timestamp: now,
       timeFromTargetMs: now - this.shownAt,
     };

@@ -249,6 +249,8 @@ function results() {
 }
 function onKey(event) {
   if (!["READY", "RUNNING"].includes(session?.state)) return;
+  // Let the keyboard change its numpad layer without scoring a response.
+  if (event.code === "NumLock" || event.key === "NumLock") return;
   event.preventDefault();
   const outcome = session.input(event);
   if (["started", "correct"].includes(outcome)) running();

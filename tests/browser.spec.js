@@ -25,6 +25,37 @@ async function answer(page, key) {
   const physical = key.code.replace(/^Key/, "").replace(/^Digit/, "");
   await page.keyboard.press(`${key.shiftRequired ? "Shift+" : ""}${physical}`);
 }
+
+test("every Thai target including mai taikhu completes with physical keys", async ({ page }) => {
+  const pool = getPool(["thai"]);
+  await configure(page, pool.length, ["thai"]);
+  const seen = new Set();
+  for (let i = 0; i < pool.length; i++) {
+    const display = await page.locator("#target").textContent();
+    seen.add(display);
+    await page.waitForTimeout(25);
+    await answer(page, pool.find(k => k.display === display));
+  }
+  expect(seen.has("็")).toBe(true);
+  await expect(page.getByRole("heading", { name: "Your results" })).toBeVisible();
+});
+
+test("numpad navigation and digits complete real UI trials; NumLock is not blocked", async ({ page }) => {
+  for (const category of ["navigation", "number"]) {
+    const pool = getPool([category]);
+    await configure(page, pool.length, [category]);
+    for (let i = 0; i < pool.length; i++) {
+      const display = await page.locator("#target").textContent();
+      const binding = pool.find(k => k.display === display).alternativeBindings[0];
+      await page.waitForTimeout(25);
+      const notBlocked = await page.evaluate(() => window.dispatchEvent(new KeyboardEvent("keydown", {code: "NumLock", key: "NumLock", bubbles: true, cancelable: true})));
+      expect(notBlocked).toBe(true);
+      await page.evaluate(({code, key}) => window.dispatchEvent(new KeyboardEvent("keydown", {code, key, location: 3, bubbles: true, cancelable: true})), binding);
+    }
+    await expect(page.getByRole("heading", { name: "Your results" })).toBeVisible();
+    await expect(page.locator("#trial-rows tr")).toHaveCount(pool.length);
+  }
+});
 test("complete Thai and symbol flow, errors, sorting and exports", async ({
   page,
 }) => {
